@@ -92,31 +92,32 @@ st.markdown(
 
 
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials
 import streamlit as st
 
 # Google Sheets Connection Setup
 @st.cache_resource
 def init_connection():
-  scope = [
-      "https://spreadsheets.google.com/feeds",
-      "https://www.googleapis.com/auth/drive",
-  ]
-  # Suriin kung nakalagay na sa Streamlit Secrets ang gcp_service_account
-  if "gcp_service_account" in st.secrets:
-    creds_dict = dict(st.secrets["gcp_service_account"])
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-  else:
-    # Kapag nasa local laptop ka
-    creds = ServiceAccountCredentials.from_json_keyfile_name(
-        "credentials.json", scope
-    )
-  client = gspread.authorize(creds)
-  return client
-
+    scope = [
+        "https://spreadsheets.google.com/feeds",
+        "https://www.googleapis.com/auth/drive",
+    ]
+    
+    # Suriin kung nakalagay na sa Streamlit Secrets ang gcp_service_account
+    if "gcp_service_account" in st.secrets:
+        creds_dict = dict(st.secrets["gcp_service_account"])
+        creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
+    else:
+        # Kapag nasa local laptop ka
+        creds = Credentials.from_service_account_file("credentials.json", scopes=scope)
+        
+    client = gspread.authorize(creds)
+    return client
 
 # Subukang ikonekta ang client
 client = init_connection()
+
+# Ipagpatuloy ang natitirang code ng iyong app dito...
 
 # Ipagpatuloy ang natitirang code ng iyong app dito...
 
