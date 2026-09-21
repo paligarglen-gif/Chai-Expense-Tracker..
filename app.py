@@ -94,21 +94,21 @@ st.markdown(
 # Google Sheets Connection Setup
 @st.cache_resource
 def init_connection():
-    scope = [
-        "https://spreadsheets.google.com/feeds",
-        "https://www.googleapis.com/auth/drive",
-    ]
-    # Suriin kung nakalagay na ba sa Streamlit Secrets ang gcp_service_account
-    if "gcp_service_account" in st.secrets:
-        creds_dict = dict(st.secrets["gcp_service_account"])
-        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-    else:
-        # Kapag nasa local laptop ka at may credentials.json file
-        creds = ServiceAccountCredentials.from_json_keyfile_name(
-            "credentials.json", scope
-        )
-    client = gspread.authorize(creds)
-    return client
+  scope = [
+      "https://spreadsheets.google.com/feeds",
+      "https://www.googleapis.com/auth/drive",
+  ]
+  # Kung nasa Streamlit Cloud, basahin ang st.secrets
+  if "gcp_service_account" in st.secrets:
+    creds_dict = dict(st.secrets["gcp_service_account"])
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+  else:
+    # Kung nasa local laptop ka pa rin
+    creds = ServiceAccountCredentials.from_json_keyfile_name(
+        "credentials.json", scope
+    )
+  client = gspread.authorize(creds)
+  return client
 
 
 def load_data():
