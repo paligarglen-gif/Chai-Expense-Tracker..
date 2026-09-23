@@ -11,12 +11,14 @@ def init_connection():
   ]
 
   try:
-    # Susubukan nitong basahin kung nasa Streamlit Cloud ka at may secrets
-    if "gcp_service_account_json" in st.secrets:
-      creds_dict = json.loads(st.secrets["gcp_service_account_json"])
-      creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
-    else:
-      creds = Credentials.from_service_account_file("credentials.json", scopes=scope)
+      # Susubukan nitong basahin kung nasa Streamlit cloud ka at may secrets
+      if "gcp_service_account_json" in st.secrets:
+        creds_dict = dict(st.secrets["gcp_service_account_json"])
+        creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
+      else:
+        creds = Credentials.from_service_account_file(
+            "credentials.json", scopes=scope
+        )
   except Exception:
     # Kapag walang nahanap na secrets.toml locally, gagamitin ang credentials.json file
     creds = Credentials.from_service_account_file("credentials.json", scopes=scope)
