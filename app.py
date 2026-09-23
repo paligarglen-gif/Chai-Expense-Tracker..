@@ -1,8 +1,9 @@
 import json
 import gspread
-from google.oauth2.service_account import Credentials
+import streamlit as pd  # o kaya ay import streamlit as st
 import streamlit as st
-import pandas as pd
+from google.oauth2.service_account import Credentials
+
 @st.cache_resource
 def init_connection():
   scope = [
@@ -10,23 +11,18 @@ def init_connection():
       "https://www.googleapis.com/auth/drive",
   ]
 
-  try:
-      # Susubukan nitong basahin kung nasa Streamlit cloud ka at may secrets
-      if "gcp_service_account_json" in st.secrets:
-        creds_dict = dict(st.secrets["gcp_service_account_json"])
-        creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
-      else:
-        creds = Credentials.from_service_account_file(
-            "credentials.json", scopes=scope
-        )
-  except Exception:
-    # Kapag walang nahanap na secrets.toml locally, gagamitin ang credentials.json file
-    creds = Credentials.from_service_account_file("credentials.json", scopes=scope)
+  if "gcp_json" in st.secrets:
+    creds_dict = json.loads(st.secrets["gcp_json"])
+    creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
+  else:
+    creds = Credentials.from_service_account_file(
+        "credentials.json", scopes=scope
+    )
 
   client = gspread.authorize(creds)
   return client
 
-
+client = init_connection()
 client = init_connection()
 
 # Coquette Custom CSS Styling
