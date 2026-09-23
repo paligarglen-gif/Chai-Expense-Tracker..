@@ -1,8 +1,8 @@
-import json
 import gspread
-import streamlit as pd  # o kaya ay import streamlit as st
+import pandas as pd
 import streamlit as st
 from google.oauth2.service_account import Credentials
+
 
 @st.cache_resource
 def init_connection():
@@ -11,11 +11,8 @@ def init_connection():
       "https://www.googleapis.com/auth/drive",
   ]
 
-  if "gcp_json" in st.secrets:
-    creds_dict = json.loads(st.secrets["gcp_json"])
-    # Siguraduhing maayos ang pagka-parse ng mga newline sa private key
-    if "private_key" in creds_dict:
-      creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+  if "gcp_service_account_json" in st.secrets:
+    creds_dict = dict(st.secrets["gcp_service_account_json"])
     creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
   else:
     creds = Credentials.from_service_account_file(
@@ -24,6 +21,7 @@ def init_connection():
 
   client = gspread.authorize(creds)
   return client
+
 
 client = init_connection()
 
@@ -118,10 +116,10 @@ def init_connection():
       "https://www.googleapis.com/auth/drive",
   ]
   try:
-    if "gcp_service_account_json" in st.secrets:
-      creds_dict = json.loads(st.secrets["gcp_service_account_json"])
+   if "gcp_service_account_json" in st.secrets:
+      creds_dict = dict(st.secrets["gcp_service_account_json"])
       creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
-    else:
+   else:
       creds = Credentials.from_service_account_file(
           "credentials.json", scopes=scope
       )
