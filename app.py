@@ -13,6 +13,9 @@ def init_connection():
 
   if "gcp_json" in st.secrets:
     creds_dict = json.loads(st.secrets["gcp_json"])
+    # Siguraduhing maayos ang pagka-parse ng mga newline sa private key
+    if "private_key" in creds_dict:
+      creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
     creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
   else:
     creds = Credentials.from_service_account_file(
@@ -22,7 +25,6 @@ def init_connection():
   client = gspread.authorize(creds)
   return client
 
-client = init_connection()
 client = init_connection()
 
 # Coquette Custom CSS Styling
