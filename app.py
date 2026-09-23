@@ -1,13 +1,31 @@
-from datetime import datetime
+import json
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-import pandas as pd
+from google.oauth2.service_account import Credentials
 import streamlit as st
+import pandas as pd
+@st.cache_resource
+def init_connection():
+  scope = [
+      "https://spreadsheets.google.com/feeds",
+      "https://www.googleapis.com/auth/drive",
+  ]
 
-# Page Configuration
-st.set_page_config(
-    page_title="Chai Expenses Tracker 🩰", page_icon="🎀", layout="wide"
-)
+  try:
+    # Susubukan nitong basahin kung nasa Streamlit Cloud ka at may secrets
+    if "gcp_service_account_json" in st.secrets:
+      creds_dict = json.loads(st.secrets["gcp_service_account_json"])
+      creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
+    else:
+      creds = Credentials.from_service_account_file("credentials.json", scopes=scope)
+  except Exception:
+    # Kapag walang nahanap na secrets.toml locally, gagamitin ang credentials.json file
+    creds = Credentials.from_service_account_file("credentials.json", scopes=scope)
+
+  client = gspread.authorize(creds)
+  return client
+
+
+client = init_connection()
 
 # Coquette Custom CSS Styling
 st.markdown(
@@ -91,36 +109,29 @@ st.markdown(
 )
 
 
-import gspread
-from google.oauth2.service_account import Credentials
-import streamlit as st
-
+# Google Sheets Connection Setup
 # Google Sheets Connection Setup
 @st.cache_resource
 def init_connection():
-    scope = [
-        "https://spreadsheets.google.com/feeds",
-        "https://www.googleapis.com/auth/drive",
-    ]
-    
-    # Suriin kung nakalagay na sa Streamlit Secrets ang gcp_service_account
-    if "gcp_service_account" in st.secrets:
-        creds_dict = dict(st.secrets["gcp_service_account"])
-        creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
+  scope = [
+      "https://spreadsheets.google.com/feeds",
+      "https://www.googleapis.com/auth/drive",
+  ]
+  try:
+    if "gcp_service_account_json" in st.secrets:
+      creds_dict = json.loads(st.secrets["gcp_service_account_json"])
+      creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
     else:
-        # Kapag nasa local laptop ka
-        creds = Credentials.from_service_account_file("credentials.json", scopes=scope)
-        
-    client = gspread.authorize(creds)
-    return client
+      creds = Credentials.from_service_account_file(
+          "credentials.json", scopes=scope
+      )
+  except Exception:
+    creds = Credentials.from_service_account_file(
+        "credentials.json", scopes=scope
+    )
 
-# Subukang ikonekta ang client
-client = init_connection()
-
-# Ipagpatuloy ang natitirang code ng iyong app dito...
-
-# Ipagpatuloy ang natitirang code ng iyong app dito...
-
+  client = gspread.authorize(creds)
+  return client
 
 def load_data():
     try:
@@ -412,7 +423,13 @@ with st.expander("✨ Open Calculator for Quick Math"):
 st.write("---")
 st.subheader("📋 Transaction History")
 
-if not df.empty:
+try:
+  client = init_connection()
+  sheet = client.open("chai_transactions").sheet1
+  data = sheet.get_all_records()
+
+  if data:
+    df = pd.DataFrame(data)
     edited_df = st.data_editor(
         df.drop(columns=["Datetime", "Month-Year"], errors="ignore"),
         num_rows="dynamic",
@@ -423,28 +440,40 @@ if not df.empty:
 
     col_save_space, col_save_btn = st.columns([3, 1])
     with col_save_btn:
-        if st.button("Save Changes / Delete 💾"):
-            cleaned_df = edited_df.drop(
-                columns=["Datetime", "Month-Year"], errors="ignore"
-            )
-            save_data_to_sheet(cleaned_df)
-            st.success(
-                "Changes saved permanently to Google Sheets and secured for years! 🩰"
-            )
-            st.rerun()
-
-else:
-    st.info("Your ledger is currently empty. Add your first record using the sidebar on the left! 🌸")
-
-# Encouraging Coquette Quote at the Bottom
+      if st.button("Save Changes / Delete 💾"):
+        cleaned_df = edited_df.drop(
+            columns=["Datetime", "Month-Year"], errors="ignore"
+        )
+        save_data_to_sheet(cleaned_df)
+        st.success(
+            "Changes saved permanently to Google Sheets and secured for years! 🩰"
+        )
+        st.rerun()
+  else:
+    st.info(
+        "Your ledger is currently empty. Add your first record using the"
+        " sidebar on the left! 🌸"
+    )
+except Exception as e:
+  st.error(f"Error loading transaction history: {e}")
+  # Coquette Motivational Quote Footer
+st.write("---")
+st.markdown(
+    """
+    <div style='text-align: center; font-family: "Dancing Script", cursive; font-size: 1.8rem; color: #b0578c; padding: 10px;'>
+    "Every small step, every saved coin, and every hard-earned profit brings you closer to the thriving empire you are building. Keep shining, you've got this! ✨💖👑"
+    </div>
+    """,
+    unsafe_allow_html=True,
+)# Direct Link papunta sa iyong Google Sheet
 st.markdown("---")
 st.markdown(
     """
-    <div style='text-align: center; padding: 10px;'>
-        <p style='font-family: "Dancing Script", cursive; font-size: 1.8rem; color: #B54565; margin: 0;'>
-            "Every small step, every saved coin, and every hard-earned profit brings you closer to the thriving empire you are building. Keep shining, you've got this! ✨💖👑"
-        </p>
+    <div style='text-align: center;'>
+        <a href="https://docs.google.com/spreadsheets/d/1XYqNHTLR6CUeuE-Qjgh1j1XeNzrKJAvxt_Y-hLS5YwY/edit?usp=sharing" target="_blank" style='text-decoration: none; background-color: #f8d7da; color: #721c24; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-family: "Quicksand", sans-serif;'>
+            📊 Open Google Sheet Ledger in New Tab
+        </a>
     </div>
-""",
+    """,
     unsafe_allow_html=True,
 )
