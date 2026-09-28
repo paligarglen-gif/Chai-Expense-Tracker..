@@ -4,25 +4,28 @@ import pandas as pd
 import streamlit as st
 from google.oauth2.service_account import Credentials
 
-
+# Google Sheets Connection Setup
 @st.cache_resource
 def init_connection():
   scope = [
       "https://spreadsheets.google.com/feeds",
       "https://www.googleapis.com/auth/drive",
   ]
+  try:
+    if "gcp_service_account_json" in st.secrets:
+      creds_dict = json.loads(st.secrets["gcp_service_account_json"])
+      creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
+    else:
+      creds = Credentials.from_service_account_file(
+          "credentials.json", scopes=scope
+    )
+  except Exception:
+    creds = Credentials.from_service_account_file(
+        "credentials.json", scopes=scope
+    )
 
-  # Direktang basahin mula sa Streamlit Secrets
-  creds_dict = json.loads(st.secrets["gcp_json"])
-  if "private_key" in creds_dict:
-    creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
-
-  creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
   client = gspread.authorize(creds)
   return client
-
-
-client = init_connection()
 
 # Coquette Custom CSS Styling
 st.markdown(
